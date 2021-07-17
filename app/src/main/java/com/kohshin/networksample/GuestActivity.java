@@ -40,6 +40,8 @@ public class GuestActivity extends AppCompatActivity {
     Socket connectedSocket;
     int tcpPort = 3333;//ホスト、ゲストで統一
 
+    boolean receivedHostInfo = false;
+
     // メイン(UI)スレッドでHandlerのインスタンスを生成する
     final Handler handler = new Handler();
 
@@ -47,6 +49,8 @@ public class GuestActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_guest);
+
+        boolean receivedHostInfo = false;
 
         mStartButton = (Button)findViewById(R.id.guest_start_button);
         mEditText = (EditText)findViewById(R.id.editTextTextMultiLineGuest);
@@ -91,6 +95,11 @@ public class GuestActivity extends AppCompatActivity {
                 int count = 0;
                 //送信回数を10回に制限する
                 while (count < 10) {
+                    //ホスト情報が受信済みならループを抜ける
+                    if(receivedHostInfo == true){
+                        break;
+                    }
+
                     try {
                         DatagramSocket udpSocket = new DatagramSocket(udpPort);
                         udpSocket.setBroadcast(true);
@@ -108,6 +117,7 @@ public class GuestActivity extends AppCompatActivity {
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
+
                     //5秒待って再送信を行う
                     try {
                         Thread.sleep(5000);
@@ -209,6 +219,9 @@ public class GuestActivity extends AppCompatActivity {
                         connectedSocket = serverSocket.accept();
                         //↓③で使用
                         inputDeviceNameAndIp(connectedSocket);
+
+                        receivedHostInfo = true;
+
                         if (serverSocket != null) {
                             serverSocket.close();
                             serverSocket = null;
