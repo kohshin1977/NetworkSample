@@ -4,6 +4,11 @@ import android.content.Context;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
+import android.os.Handler;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.os.Build;
 
@@ -24,7 +29,8 @@ import java.net.UnknownHostException;
 
 public class HostActivity extends AppCompatActivity {
 
-    private TextView mTextView;
+    Button mStartButton;
+    private EditText mEditText;
 
     DatagramSocket receiveUdpSocket;
     boolean waiting;
@@ -36,15 +42,60 @@ public class HostActivity extends AppCompatActivity {
 
     Socket returnSocket;
 
+    // メイン(UI)スレッドでHandlerのインスタンスを生成する
+    final Handler handler = new Handler();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_host);
 
-        mTextView = (TextView) findViewById(R.id.text);
+        mStartButton = (Button)findViewById(R.id.host_start_button);
+        mEditText = (EditText)findViewById(R.id.editTextTextMultiLineHost);
+
+        mStartButton.setOnClickListener(new StartButtonListener());
 
 
     }
+
+    @Override
+    protected void onDestroy(){
+        super.onDestroy();
+
+        if(receiveUdpSocket != null) {
+            receiveUdpSocket.close();
+            mEditText.append("receiveUdpSocket クローズ。" + "\n");
+        }
+
+        if(returnSocket != null){
+            try {
+                returnSocket.close();
+                mEditText.append("returnSocket クローズ。" + "\n");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        if(serverSocket != null) {
+            try {
+                serverSocket.close();
+                mEditText.append("serverSocket クローズ。" + "\n");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        if(connectedSocket != null){
+            try {
+                connectedSocket.close();
+                mEditText.append("connectedSocket クローズ。" + "\n");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+    }
+
 
     //ブロードキャスト受信用ソケットの生成
     //ブロードキャスト受信待ち状態を作る
@@ -55,6 +106,13 @@ public class HostActivity extends AppCompatActivity {
             public void run(){
                 String address = null;
                 try {
+                    // Handlerを使用してメイン(UI)スレッドに処理を依頼する
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            mEditText.append("ブロードキャストの待ち受けを開始しました。\n");
+                        }
+                    });
                     //waiting = trueの間、ブロードキャストを受け取る
                     while(waiting){
                         //受信用ソケット
@@ -64,10 +122,18 @@ public class HostActivity extends AppCompatActivity {
                         //ゲスト端末からのブロードキャストを受け取る
                         //受け取るまでは待ち状態になる
                         receiveUdpSocket.receive(packet);
+
                         //受信バイト数取得
                         int length = packet.getLength();
                         //受け取ったパケットを文字列にする
                         address = new String(buf, 0, length);
+                        String finalAddress = address;
+                        handler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                mEditText.append("ゲストのIPアドレスを受信 : "+ finalAddress + "\n");
+                            }
+                        });
                         //↓③で使用
                         returnIpAdress(address);
                         receiveUdpSocket.close();
@@ -87,6 +153,13 @@ public class HostActivity extends AppCompatActivity {
             @Override
             public void run(){
                 try {
+                    // Handlerを使用してメイン(UI)スレッドに処理を依頼する
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            mEditText.append("TCPの待ち受けを開始しました。\n");
+                        }
+                    });
                     //ServerSocketを生成する
                     serverSocket = new ServerSocket(tcpPort);
                     //ゲストからの接続が完了するまで待って処理を進める
@@ -220,6 +293,13 @@ public class HostActivity extends AppCompatActivity {
                     bufferedWriter.write("outputFinish");
                     //出力する
                     bufferedWriter.flush();
+                    handler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            mEditText.append("ホストのデバイス名を送信 : "+ deviceName + "\n");
+                            mEditText.append("ホストのIPアドレスを送信 : "+ deviceAddress + "\n");
+                        }
+                    });
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -227,4 +307,12 @@ public class HostActivity extends AppCompatActivity {
         }.start();
     }
 
+    private class StartButtonListener implements View.OnClickListener {
+        @Override
+        public void onClick(View v) {
+            createReceiveUdpSocket();
+
+            connect();
+        }
+    }
 }

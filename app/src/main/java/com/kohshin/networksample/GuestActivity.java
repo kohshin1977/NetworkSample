@@ -5,6 +5,10 @@ import android.net.DhcpInfo;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
+import android.os.Handler;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -24,7 +28,8 @@ import java.net.UnknownHostException;
 
 public class GuestActivity extends AppCompatActivity {
 
-    private TextView mTextView;
+    Button mStartButton;
+    private EditText mEditText;
 
     boolean waiting;
     int udpPort = 9999;//ホスト、ゲストで統一
@@ -35,13 +40,44 @@ public class GuestActivity extends AppCompatActivity {
     Socket connectedSocket;
     int tcpPort = 3333;//ホスト、ゲストで統一
 
+    // メイン(UI)スレッドでHandlerのインスタンスを生成する
+    final Handler handler = new Handler();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_guest);
 
-        mTextView = (TextView) findViewById(R.id.text);
+        mStartButton = (Button)findViewById(R.id.guest_start_button);
+        mEditText = (EditText)findViewById(R.id.editTextTextMultiLineGuest);
 
+        mStartButton.setOnClickListener(new StartButtonListener());
+
+
+    }
+
+    @Override
+    protected void onDestroy(){
+        super.onDestroy();
+
+
+        if(serverSocket != null) {
+            try {
+                serverSocket.close();
+                mEditText.setText("serverSocket クローズ。" + "\n");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        if(connectedSocket != null){
+            try {
+                connectedSocket.close();
+                mEditText.setText("connectedSocket クローズ。" + "\n");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
 
     }
 
@@ -60,6 +96,12 @@ public class GuestActivity extends AppCompatActivity {
                         udpSocket.setBroadcast(true);
                         DatagramPacket packet = new DatagramPacket(myIpAddress.getBytes(), myIpAddress.length(), getBroadcastAddress(), udpPort);
                         udpSocket.send(packet);
+                        handler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                mEditText.append("IPアドレスを送信 : "+myIpAddress + "\n");
+                            }
+                        });
                         udpSocket.close();
                     } catch (SocketException e) {
                         e.printStackTrace();
@@ -200,11 +242,25 @@ public class GuestActivity extends AppCompatActivity {
                     case 0:
                         //1行目、端末名の格納
                         hostDevice.setDeviceName(remoteDeviceInfo);
+                        String finalRemoteDeviceInfo = remoteDeviceInfo;
+                        handler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                mEditText.append("端末名を受信 : "+ finalRemoteDeviceInfo + "\n");
+                            }
+                        });
                         infoCounter++;
                         break;
                     case 1:
                         //2行目、IPアドレスの取得
                         hostDevice.setDeviceIpAddress(remoteDeviceInfo);
+                        String finalRemoteDeviceInfo1 = remoteDeviceInfo;
+                        handler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                mEditText.append("IPアドレスを受信 : "+ finalRemoteDeviceInfo1 + "\n");
+                            }
+                        });
                         infoCounter++;
                         return;
                     default:
@@ -238,4 +294,12 @@ public class GuestActivity extends AppCompatActivity {
         }.start();
     }
 
+    private class StartButtonListener implements View.OnClickListener {
+        @Override
+        public void onClick(View v) {
+            sendBroadcast();
+
+            receivedHostIp();
+        }
+    }
 }
