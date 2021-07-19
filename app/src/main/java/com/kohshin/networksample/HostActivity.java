@@ -1,14 +1,20 @@
 package com.kohshin.networksample;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.ListView;
+import android.widget.NumberPicker;
 import android.widget.TextView;
 import android.os.Build;
 
@@ -26,6 +32,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 
 public class HostActivity extends AppCompatActivity {
 
@@ -44,6 +51,9 @@ public class HostActivity extends AppCompatActivity {
 
     // メイン(UI)スレッドでHandlerのインスタンスを生成する
     final Handler handler = new Handler();
+
+    LinearLayout linearLayout;
+    ArrayAdapter adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -116,7 +126,7 @@ public class HostActivity extends AppCompatActivity {
                     //waiting = trueの間、ブロードキャストを受け取る
                     while(waiting){
                         //受信用ソケット
-                        DatagramSocket receiveUdpSocket = new DatagramSocket(udpPort);
+                        receiveUdpSocket = new DatagramSocket(udpPort);
                         byte[] buf = new byte[256];
                         DatagramPacket packet = new DatagramPacket(buf, buf.length);
                         //ゲスト端末からのブロードキャストを受け取る
@@ -132,6 +142,12 @@ public class HostActivity extends AppCompatActivity {
                             @Override
                             public void run() {
                                 mEditText.append("ゲストのIPアドレスを受信 : "+ finalAddress + "\n");
+                            }
+                        });
+                        handler.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                adapter.add("いいいいい");
                             }
                         });
                         //↓③で使用
@@ -313,6 +329,50 @@ public class HostActivity extends AppCompatActivity {
             createReceiveUdpSocket();
 
             connect();
+
+            showReceivingBroadcastFromGuestDialog();
         }
+    }
+
+
+    private void showReceivingBroadcastFromGuestDialog() {
+        //Inflating a LinearLayout dynamically to add TextInputLayout
+        //This will be added in AlertDialog
+        linearLayout = (LinearLayout) getLayoutInflater().inflate(R.layout.receiving_broadcast_from_guest_dialog, null);
+
+        // ListViewに表示するリスト項目をArrayListで準備する
+        ArrayList data = new ArrayList<>();
+        data.add("国語");
+        data.add("社会");
+        data.add("算数");
+        data.add("理科");
+
+        // リスト項目とListViewを対応付けるArrayAdapterを用意する
+        adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, data);
+
+        // ListViewにArrayAdapterを設定する
+        ListView listView = (ListView)linearLayout.findViewById(R.id.listView);
+        listView.setAdapter(adapter);
+
+        adapter.add("ああああ");
+
+        //Finally building an AlertDialog
+        final AlertDialog builder = new AlertDialog.Builder(this)
+                .setTitle("受信待ち")
+//                .setPositiveButton("OK", null)
+                .setNegativeButton("Cancel", null)
+                .setView(linearLayout)
+                .setCancelable(false)
+                .create();
+        builder.show();
+        //Setting up OnClickListener on positive button of AlertDialog
+        builder.getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                // OKクリック時の処理
+                builder.dismiss();
+            }
+        });
     }
 }
