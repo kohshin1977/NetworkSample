@@ -342,10 +342,6 @@ public class HostActivity extends AppCompatActivity {
 
         // ListViewに表示するリスト項目をArrayListで準備する
         ArrayList data = new ArrayList<>();
-        data.add("国語");
-        data.add("社会");
-        data.add("算数");
-        data.add("理科");
 
         // リスト項目とListViewを対応付けるArrayAdapterを用意する
         adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, data);
@@ -354,7 +350,6 @@ public class HostActivity extends AppCompatActivity {
         ListView listView = (ListView)linearLayout.findViewById(R.id.listView);
         listView.setAdapter(adapter);
 
-        adapter.add("ああああ");
 
         //Finally building an AlertDialog
         final AlertDialog builder = new AlertDialog.Builder(this)
