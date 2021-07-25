@@ -41,11 +41,11 @@ public class HostActivity extends AppCompatActivity {
 
     DatagramSocket receiveUdpSocket;
     boolean waiting;
-    int udpPort = 9999;//ホスト、ゲストで統一
+    int udpPort = 8888;//ホスト、ゲストで統一
 
     ServerSocket serverSocket;
     Socket connectedSocket;
-    int tcpPort = 3333;//ホスト、ゲストで統一
+    int tcpPort = 4444;//ホスト、ゲストで統一
 
     Socket returnSocket;
 

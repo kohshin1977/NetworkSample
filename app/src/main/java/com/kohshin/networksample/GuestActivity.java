@@ -32,13 +32,13 @@ public class GuestActivity extends AppCompatActivity {
     private EditText mEditText;
 
     boolean waiting;
-    int udpPort = 9999;//ホスト、ゲストで統一
+    int udpPort = 8888;//ホスト、ゲストで統一
 
     WifiManager wifi;
 
     ServerSocket serverSocket;
     Socket connectedSocket;
-    int tcpPort = 3333;//ホスト、ゲストで統一
+    int tcpPort = 4444;//ホスト、ゲストで統一
 
     boolean receivedHostInfo = false;
 
@@ -242,9 +242,7 @@ public class GuestActivity extends AppCompatActivity {
     //端末名とIPアドレスのセットを受け取る
     void inputDeviceNameAndIp(Socket socket){
         try {
-            BufferedReader bufferedReader = new BufferedReader(
-                    new InputStreamReader(socket.getInputStream())
-            );
+            BufferedReader bufferedReader = new BufferedReader( new InputStreamReader(socket.getInputStream()) );
             int infoCounter = 0;
             String remoteDeviceInfo;
             //ホスト端末情報(端末名とIPアドレス)を保持するためのクラスオブジェクト
