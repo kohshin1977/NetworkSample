@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -34,7 +35,7 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 
-public class HostActivity extends AppCompatActivity {
+public class HostActivity extends AppCompatActivity implements View.OnClickListener, AdapterView.OnItemClickListener {
 
     Button mStartButton;
     private EditText mEditText;
@@ -46,6 +47,10 @@ public class HostActivity extends AppCompatActivity {
     ServerSocket serverSocket;
     Socket connectedSocket;
     int tcpPort = 4444;//ホスト、ゲストで統一
+
+    String gusetIpAddress;
+    String guestDeviceName;
+    int receive_tcp_port;
 
     Socket returnSocket;
 
@@ -136,8 +141,12 @@ public class HostActivity extends AppCompatActivity {
                         //受信バイト数取得
                         int length = packet.getLength();
                         //受け取ったパケットを文字列にする
-                        address = new String(buf, 0, length);
-                        String finalAddress = address;
+                        String str = new String(buf, 0, length);
+                        gusetIpAddress = str.split(",")[0];
+                        receive_tcp_port = Integer.parseInt(str.split(",")[1]);
+                        guestDeviceName = str.split(",")[2];
+
+                        String finalAddress = gusetIpAddress;
                         handler.post(new Runnable() {
                             @Override
                             public void run() {
@@ -147,11 +156,9 @@ public class HostActivity extends AppCompatActivity {
                         handler.post(new Runnable() {
                             @Override
                             public void run() {
-                                adapter.add("いいいいい");
+                                adapter.add(guestDeviceName);
                             }
                         });
-                        //↓③で使用
-                        returnIpAdress(address);
                         receiveUdpSocket.close();
                     }
                 } catch (SocketException e) {
@@ -323,6 +330,7 @@ public class HostActivity extends AppCompatActivity {
         }.start();
     }
 
+
     private class StartButtonListener implements View.OnClickListener {
         @Override
         public void onClick(View v) {
@@ -333,7 +341,6 @@ public class HostActivity extends AppCompatActivity {
             showReceivingBroadcastFromGuestDialog();
         }
     }
-
 
     private void showReceivingBroadcastFromGuestDialog() {
         //Inflating a LinearLayout dynamically to add TextInputLayout
@@ -349,6 +356,8 @@ public class HostActivity extends AppCompatActivity {
         // ListViewにArrayAdapterを設定する
         ListView listView = (ListView)linearLayout.findViewById(R.id.listView);
         listView.setAdapter(adapter);
+
+        listView.setOnItemClickListener(this);
 
 
         //Finally building an AlertDialog
@@ -370,4 +379,16 @@ public class HostActivity extends AppCompatActivity {
             }
         });
     }
+
+    @Override
+    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+        //↓③で使用
+        returnIpAdress(gusetIpAddress);
+    }
+
+    @Override
+    public void onClick(View v) {
+
+    }
+
 }

@@ -88,6 +88,8 @@ public class GuestActivity extends AppCompatActivity {
     //同一Wi-fiに接続している全端末に対してブロードキャスト送信を行う
     void sendBroadcast(){
         final String myIpAddress = getIpAddress();
+        final String cameraIpAddress = myIpAddress + "," + tcpPort + "," + android.os.Build.MODEL;
+
         waiting = true;
         new Thread() {
             @Override
@@ -103,7 +105,8 @@ public class GuestActivity extends AppCompatActivity {
                     try {
                         DatagramSocket udpSocket = new DatagramSocket(udpPort);
                         udpSocket.setBroadcast(true);
-                        DatagramPacket packet = new DatagramPacket(myIpAddress.getBytes(), myIpAddress.length(), getBroadcastAddress(), udpPort);
+//                        DatagramPacket packet = new DatagramPacket(myIpAddress.getBytes(), myIpAddress.length(), getBroadcastAddress(), udpPort);
+                        DatagramPacket packet = new DatagramPacket(cameraIpAddress.getBytes(), cameraIpAddress.length(), getBroadcastAddress(), udpPort);
                         udpSocket.send(packet);
                         handler.post(new Runnable() {
                             @Override
