@@ -57,6 +57,9 @@ public class HostActivity extends AppCompatActivity implements View.OnClickListe
     // メイン(UI)スレッドでHandlerのインスタンスを生成する
     final Handler handler = new Handler();
 
+    //Finally building an AlertDialog
+    AlertDialog builder = null;
+
     LinearLayout linearLayout;
     ArrayAdapter adapter;
 
@@ -361,7 +364,7 @@ public class HostActivity extends AppCompatActivity implements View.OnClickListe
 
 
         //Finally building an AlertDialog
-        final AlertDialog builder = new AlertDialog.Builder(this)
+        builder = new AlertDialog.Builder(this)
                 .setTitle("受信待ち")
 //                .setPositiveButton("OK", null)
                 .setNegativeButton("Cancel", null)
@@ -384,6 +387,8 @@ public class HostActivity extends AppCompatActivity implements View.OnClickListe
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         //↓③で使用
         returnIpAdress(gusetIpAddress);
+
+        builder.dismiss();
     }
 
     @Override
