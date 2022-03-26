@@ -25,6 +25,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.Random;
+import java.util.stream.Stream;
 
 public class GuestActivity extends AppCompatActivity {
 
@@ -39,6 +41,7 @@ public class GuestActivity extends AppCompatActivity {
     ServerSocket serverSocket;
     Socket connectedSocket;
     int tcpPort = 4444;//ホスト、ゲストで統一
+    int tcpPort_command = 5555;//ホスト、ゲストで統一
 
     boolean receivedHostInfo = false;
 
@@ -88,7 +91,8 @@ public class GuestActivity extends AppCompatActivity {
     //同一Wi-fiに接続している全端末に対してブロードキャスト送信を行う
     void sendBroadcast(){
         final String myIpAddress = getIpAddress();
-        final String cameraIpAddress = myIpAddress + "," + tcpPort + "," + android.os.Build.MODEL;
+
+        final String cameraIpAddress = myIpAddress + "," + tcpPort + "," + android.os.Build.MODEL + "," + tcpPort_command;
 
         waiting = true;
         new Thread() {
@@ -251,35 +255,44 @@ public class GuestActivity extends AppCompatActivity {
             //ホスト端末情報(端末名とIPアドレス)を保持するためのクラスオブジェクト
             //※このクラスは別途作成しているもの
             SampleDevice hostDevice = new SampleDevice();
+
             while((remoteDeviceInfo = bufferedReader.readLine()) != null && !remoteDeviceInfo.equals("outputFinish")){
-                switch(infoCounter){
-                    case 0:
-                        //1行目、端末名の格納
-                        hostDevice.setDeviceName(remoteDeviceInfo);
-                        String finalRemoteDeviceInfo = remoteDeviceInfo;
-                        handler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                mEditText.append("端末名を受信 : "+ finalRemoteDeviceInfo + "\n");
-                            }
-                        });
-                        infoCounter++;
-                        break;
-                    case 1:
-                        //2行目、IPアドレスの取得
-                        hostDevice.setDeviceIpAddress(remoteDeviceInfo);
-                        String finalRemoteDeviceInfo1 = remoteDeviceInfo;
-                        handler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                mEditText.append("IPアドレスを受信 : "+ finalRemoteDeviceInfo1 + "\n");
-                            }
-                        });
-                        infoCounter++;
-                        return;
-                    default:
-                        return;
-                }
+                String finalRemoteDeviceInfo = remoteDeviceInfo;
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        mEditText.append("端末名 : "+ finalRemoteDeviceInfo.split(",")[0] +
+                                "  アドレス : "+ finalRemoteDeviceInfo.split(",")[1] +"\n");
+                    }
+                });
+//                switch(infoCounter){
+//                    case 0:
+//                        //1行目、端末名の格納
+//                        hostDevice.setDeviceName(remoteDeviceInfo);
+//                        String finalRemoteDeviceInfo = remoteDeviceInfo;
+//                        handler.post(new Runnable() {
+//                            @Override
+//                            public void run() {
+//                                mEditText.append("端末名を受信 : "+ finalRemoteDeviceInfo + "\n");
+//                            }
+//                        });
+//                        infoCounter++;
+//                        break;
+//                    case 1:
+//                        //2行目、IPアドレスの取得
+//                        hostDevice.setDeviceIpAddress(remoteDeviceInfo);
+//                        String finalRemoteDeviceInfo1 = remoteDeviceInfo;
+//                        handler.post(new Runnable() {
+//                            @Override
+//                            public void run() {
+//                                mEditText.append("IPアドレスを受信 : "+ finalRemoteDeviceInfo1 + "\n");
+//                            }
+//                        });
+//                        infoCounter++;
+//                        return;
+//                    default:
+//                        return;
+//                }
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -311,6 +324,16 @@ public class GuestActivity extends AppCompatActivity {
     private class StartButtonListener implements View.OnClickListener {
         @Override
         public void onClick(View v) {
+            Random rand = new Random();
+
+            tcpPort = rand.nextInt(35535) + 30000;
+            while(true){
+                int tmp = rand.nextInt(35535) + 30000;
+                if(tmp != tcpPort){
+                    tcpPort_command = tmp;
+                    break;
+                }
+            }
             sendBroadcast();
 
             receivedHostIp();
